@@ -23,6 +23,7 @@ public class VendeurAgent extends GuiAgent {
 	protected VendeurGui gui;
 	protected Article liste_articles[];
 	List<String> givenList = Arrays.asList("Livre", "Ordinateur", "Téléphone", "Montre", "Table", "Stylo");
+	List<Integer> coefList = Arrays.asList(8, 20, 16, 4, 5, 1);
 	
 	@Override
 	protected void setup() {
@@ -41,14 +42,18 @@ public class VendeurAgent extends GuiAgent {
 				// TODO Auto-generated method stub
 				
 				//On crée les articles
-				Collections.shuffle(givenList);
+				String affichage = "";
 				Random rnd = new Random();
+				int seed = rnd.nextInt(1000);
+				Collections.shuffle(givenList, new Random(seed));
+				Collections.shuffle(coefList, new Random(seed));
 				liste_articles = new Article[5];
 				for(int i = 0; i <= 4; i++) {
-					int prix = 1000 + rnd.nextInt(1000);
+					int prix = 1000 * coefList.get(i) + rnd.nextInt(1000);
 					int qnte = rnd.nextInt(10);
 					String nom = givenList.get(i);
 					liste_articles[i] = new Article(nom, prix, qnte, this.getAgent().getName());
+					affichage += "\t - " + nom + "     Prix: "+ prix + "    Qnte: " + qnte + "\n";
 				}
 				
 				DFAgentDescription agentDescription = new DFAgentDescription();
@@ -59,6 +64,8 @@ public class VendeurAgent extends GuiAgent {
 				agentDescription.addServices(serviceDescription);
 				try {
 					DFService.register(myAgent, agentDescription);
+					gui.logMessage("Agent " + myAgent.getLocalName() + " déployé");
+					gui.logMessage(affichage);
 				} catch (FIPAException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -73,7 +80,7 @@ public class VendeurAgent extends GuiAgent {
 				// TODO Auto-generated method stub
 				ACLMessage aclMessage = receive();
 				if(aclMessage != null) {
-					gui.logMessage(aclMessage);
+					//gui.logMessage(aclMessage);
 					switch (aclMessage.getPerformative()) {
 						case ACLMessage.CFP:
 							

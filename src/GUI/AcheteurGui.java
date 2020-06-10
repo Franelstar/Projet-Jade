@@ -36,7 +36,7 @@ public class AcheteurGui extends Application {
 		ListView<String> listView = new ListView<String>(observableList);
 		vBox.getChildren().add(listView);
 		borderPane.setCenter(vBox);
-		Scene scene = new Scene(borderPane, 300, 400);
+		Scene scene = new Scene(borderPane, 400, 400);
 		primaryStage.setScene(scene);
 		primaryStage.show();
 		
@@ -56,8 +56,8 @@ public class AcheteurGui extends Application {
 
 	public void logMessage(ACLMessage aclMessage) {
 		Platform.runLater(() -> { //Pour éviter les problème de thread
-			observableList.add(aclMessage.getContent() + ", " 
-					+ aclMessage.getSender().getName());
+			observableList.add(aclMessage.getSender().getLocalName() + " ==> " 
+					+ aclMessage.getContent());
 		});
 	}
 }

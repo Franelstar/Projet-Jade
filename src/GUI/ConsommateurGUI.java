@@ -170,7 +170,7 @@ public class ConsommateurGUI extends Application{
 	    	final Text actiontarget = new Text();
 	        grid.add(actiontarget, 1, 6);
 	        
-	        Scene s = new Scene(grid,300,500);
+	        Scene s = new Scene(grid,350,300);
 	    	
 	    	Stage dialog = new Stage();
 	        
@@ -226,8 +226,8 @@ public class ConsommateurGUI extends Application{
 	
 	public void logMessage(ACLMessage aclMessage) {
 		Platform.runLater(() -> {
-			observableList.add(aclMessage.getContent() + ", " 
-							+ aclMessage.getSender().getName());
+			observableList.add(aclMessage.getSender().getLocalName() + " ==> " 
+							+ aclMessage.getContent());
 		});
 	}
 	
@@ -284,7 +284,7 @@ public class ConsommateurGUI extends Application{
 	        table.getColumns().addAll(articleCol, vendeurCol, qnteCol, prixUCol, prixTCol);
 
 	        
-	        Button selectButton = new Button("Sellection");
+	        Button selectButton = new Button("Commander");
 	        //selectButton.applyCss(CSS2Propertie);
 	        selectButton.setOnAction(evte -> {
 	        	Article article = (Article) table.getSelectionModel().getSelectedItem();

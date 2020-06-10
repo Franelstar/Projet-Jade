@@ -3,9 +3,7 @@ package agents;
 import GUI.ConsommateurGUI;
 import jade.core.AID;
 import jade.core.behaviours.CyclicBehaviour;
-import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.ParallelBehaviour;
-import jade.core.behaviours.TickerBehaviour;
 import jade.gui.GuiAgent;
 import jade.gui.GuiEvent;
 import jade.lang.acl.ACLMessage;
@@ -34,16 +32,6 @@ public class ConsommateurAgent extends GuiAgent {
 		 */
 		ParallelBehaviour parallelBehaviour = new ParallelBehaviour();
 		addBehaviour(parallelBehaviour);
-		
-		// Est appelé une seule fois
-		addBehaviour(new OneShotBehaviour() {
-			
-			@Override
-			public void action() {
-				// TODO Auto-generated method stub
-				System.out.println("Action ..................");
-			}
-		});
 		
 		// Est appellé tout le temps (s'exécute à l'infini)
 		parallelBehaviour.addSubBehaviour(new CyclicBehaviour() {
@@ -75,80 +63,27 @@ public class ConsommateurAgent extends GuiAgent {
 						break;
 						
 					case ACLMessage.INFORM:
-						System.out.println("ici1");
-						System.out.println(aclMessage.getContent());
-						gui.recevoirProposition(aclMessage);
+						if(aclMessage.getContent().contains("//")) {
+							System.out.println("ici1");
+							System.out.println(aclMessage.getContent());
+							gui.recevoirProposition(aclMessage);
+						} else {
+							gui.logMessage(aclMessage);
+						}
+						break;
+						
+					case ACLMessage.FAILURE:
+						gui.logMessage(aclMessage);
 						break;
 
 					default:
 						break;
 					}
-					
 				}
 				else
 					block();
 			}
 		});
-		
-		// Appeler tous les x secondes	
-		addBehaviour(new TickerBehaviour(this, 1000) {
-			
-			@Override
-			protected void onTick() {
-				// TODO Auto-generated method stub
-				//System.out.println("Je suis fait tout les 1 secondes dans l'agent " + myAgent.getAID().getName());
-			}
-		});
-		
-		/*Comportement générique
-		 * 
-		 * addBehaviour(new Behaviour() {
-			private int compteur = 0;
-			
-			@Override
-			public boolean done() {
-				if(compteur == 10) return true
-				else return false;
-			}
-			
-			@Override
-			public void action() {
-				System.out.println("Etape " + compteur);
-				compteur++;
-			}
-		});*/
-	}
-	
-	/**
-	 * 
-	 * Fonction exécutée lorsqu'on demande à l'agent de migrer vers un autre container
-	 * Elle est exécutée avant la migration
-	 */
-	@Override
-	protected void beforeMove() {
-		// TODO Auto-generated method stub
-		super.beforeMove();
-	}
-	
-	/**
-	 * 
-	 * Fonction exécutée lorsqu'on demande à l'agent de migrer vers un autre container
-	 * Elle est exécutée après la migration
-	 */
-	@Override
-	protected void afterMove() {
-		// TODO Auto-generated method stub
-		super.afterMove();
-	}
-	
-	/**
-	 * 
-	 * Méthode appelé juste avant que l'agent ne meurt
-	 */
-	@Override
-	protected void takeDown() {
-		// TODO Auto-generated method stub
-		super.takeDown();
 	}
 
 	/**

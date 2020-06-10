@@ -22,7 +22,8 @@ public class AcheteurAgent extends GuiAgent {
 	
 	protected AcheteurGui gui;
 	protected AID[] vendeurs;
-	protected double minimum = 0.0;
+	protected AID[] livreurs;
+	protected double minimumL = Float.POSITIVE_INFINITY;
 	protected String article = "";
 	protected int prixMax;
 	protected int qnte;
@@ -58,6 +59,21 @@ public class AcheteurAgent extends GuiAgent {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+				
+				serviceDescription.setType("transaction");
+				serviceDescription.setName("livraison-articles");
+				dfAgentDescription.addServices(serviceDescription);
+				try {
+					DFAgentDescription[] results = DFService.search(myAgent, dfAgentDescription);
+					
+					livreurs = new AID[results.length];
+					for(int i = 0; i < livreurs.length; i++) {
+						livreurs[i] = results[i].getName();
+					}
+				} catch (FIPAException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		});
 		
@@ -65,6 +81,7 @@ public class AcheteurAgent extends GuiAgent {
 			
 			//Pour compter me le nombre de vendeur qui envoye leur proposition
 			private int compteur = 0;
+			private int compteurL = 0;
 			private List<ACLMessage> replies = new ArrayList<ACLMessage>();
 			
 			@Override
@@ -92,7 +109,7 @@ public class AcheteurAgent extends GuiAgent {
 						
 						ACLMessage reply = aclMessage.createReply();
 						reply.setPerformative(ACLMessage.CONFIRM);
-						reply.setContent("Je vais chercher " + article + " au prix unitaire Maximum de " + prixMax);
+						reply.setContent("Article: " + article + " prix unitaire Maximum: " + prixMax);
 						send(reply);
 						
 						
@@ -107,33 +124,57 @@ public class AcheteurAgent extends GuiAgent {
 						
 						break;
 					case ACLMessage.PROPOSE:
-						
-						++compteur;
-						replies.add(aclMessage);
-						//si tous les vendeurs on envoyés leur proposition
-						if(compteur == vendeurs.length) {
-							String retour = "";
-							for(ACLMessage offre : replies) {
-								if(offre.getPerformative() == ACLMessage.PROPOSE) {
-									String[] parts = offre.getContent().split("--");
-									
-									if(parts.length == 4) {
-										retour += offre.getContent() + "//";
+						if(estVendeur(aclMessage.getSender())) {
+							++compteur;
+							replies.add(aclMessage);
+							//si tous les vendeurs on envoyés leur proposition
+							if(compteur == vendeurs.length) {
+								String retour = "";
+								for(ACLMessage offre : replies) {
+									if(offre.getPerformative() == ACLMessage.PROPOSE) {
+										String[] parts = offre.getContent().split("--");
+										
+										if(parts.length == 4 && Integer.parseInt(parts[1]) <= prixMax) {
+											retour += offre.getContent() + "//";
+										}
 									}
 								}
+								
+								ACLMessage aclMessage3 = new ACLMessage(ACLMessage.INFORM);
+								aclMessage3.addReceiver(new AID("Consommateur", AID.ISLOCALNAME));
+								aclMessage3.setContent(retour);
+								send(aclMessage3);
+								
+								//ACLMessage aclMessageAccept = meilleureOffre.createReply();
+								//aclMessageAccept.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
+								//aclMessageAccept.setContent("J'accepte ta proposition");
+								//send(aclMessageAccept);
+								compteur = 0;
+								replies.clear();
 							}
-							
-							ACLMessage aclMessage3 = new ACLMessage(ACLMessage.INFORM);
-							aclMessage3.addReceiver(new AID("Consommateur", AID.ISLOCALNAME));
-							aclMessage3.setContent(retour);
-							send(aclMessage3);
-							
-							//ACLMessage aclMessageAccept = meilleureOffre.createReply();
-							//aclMessageAccept.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
-							//aclMessageAccept.setContent("J'accepte ta proposition");
-							//send(aclMessageAccept);
-							compteur = 0;
-							replies.clear();
+						} else if(estLivreur(aclMessage.getSender())) {
+							++compteurL;
+							replies.add(aclMessage);
+							//si tous les livreurs on envoyés leur proposition
+							if(compteurL == livreurs.length) {
+								ACLMessage retour = null;
+								for(ACLMessage offre : replies) {
+									Float prix = Float.parseFloat(offre.getContent().split("--")[4]);
+									if(minimumL > prix) {
+										minimumL = prix;
+										retour = offre;
+									}
+								}
+								
+								reply = retour.createReply();
+								reply.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
+								reply.setContent(retour.getContent());
+								send(reply);
+								
+								compteurL = 0;
+								minimumL = Float.POSITIVE_INFINITY;
+								replies.clear();
+							}
 						}
 						
 						break;
@@ -176,7 +217,7 @@ public class AcheteurAgent extends GuiAgent {
 						aclMessage3.addReceiver(new AID("Consommateur", AID.ISLOCALNAME));
 						aclMessage3.setContent(aclMessage.getContent());
 						aclMessage3.setContent("La meilleure proposition pour le livre " +
-								article + " est " + minimum);
+								article + " est " + minimumL);
 						send(aclMessage3);
 						
 						break;
@@ -201,13 +242,30 @@ public class AcheteurAgent extends GuiAgent {
 							if(!trouveV) {
 								reply = aclMessage.createReply();
 								reply.setPerformative(ACLMessage.FAILURE);
-								reply.setContent(aclMessage.getContent().split("---")[0]);
+								reply.setContent("Le vendeur n'est plus disponible");
 								send(reply);
 							}
 						} else if(estVendeur(aclMessage.getSender())) {
+							ACLMessage aclMessage4 = new ACLMessage(ACLMessage.CFP);
 							
-						} else {
+							aclMessage4.setContent(aclMessage.getContent());
+							for(AID aid : livreurs) {
+								aclMessage4.addReceiver(aid);
+							}
 							
+							send(aclMessage4);
+						} else if(estLivreur(aclMessage.getSender())) {
+							ACLMessage aclMessage4 = new ACLMessage(ACLMessage.INFORM);
+							aclMessage4.addReceiver(new AID("Consommateur", AID.ISLOCALNAME));
+							String retourMessage = "Votre commande est confirmée. Informations :\n";
+							retourMessage += "\t Article: " + aclMessage.getContent().split("--")[0] + "\n";
+							retourMessage += "\t Vendeur: " + aclMessage.getContent().split("--")[3] + "\n";
+							retourMessage += "\t Prix U.: " + aclMessage.getContent().split("--")[1] + "\n";
+							retourMessage += "\t Quantité: " + aclMessage.getContent().split("--")[2] + "\n";
+							retourMessage += "\t Livreur: " + aclMessage.getContent().split("--")[5] + "\n";
+							retourMessage += "\t Prix livraison: " + aclMessage.getContent().split("--")[4] + "\n";
+							aclMessage4.setContent(retourMessage);
+							send(aclMessage4);
 						}
 						
 						break;
@@ -216,7 +274,7 @@ public class AcheteurAgent extends GuiAgent {
 						
 						reply = aclMessage.createReply();
 						reply.setPerformative(ACLMessage.FAILURE);
-						reply.setContent(aclMessage.getContent().split("---")[0]);
+						reply.setContent("Aucun livreur disponible");
 						send(reply);
 						
 						break;
@@ -239,6 +297,15 @@ public class AcheteurAgent extends GuiAgent {
 	
 	protected Boolean estVendeur(AID aid) {
 		for(AID ai : vendeurs) {
+			if(ai.getName().equals(aid.getName())) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	protected Boolean estLivreur(AID aid) {
+		for(AID ai : livreurs) {
 			if(ai.getName().equals(aid.getName())) {
 				return true;
 			}
