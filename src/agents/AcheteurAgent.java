@@ -144,11 +144,6 @@ public class AcheteurAgent extends GuiAgent {
 								aclMessage3.addReceiver(new AID("Consommateur", AID.ISLOCALNAME));
 								aclMessage3.setContent(retour);
 								send(aclMessage3);
-								
-								//ACLMessage aclMessageAccept = meilleureOffre.createReply();
-								//aclMessageAccept.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
-								//aclMessageAccept.setContent("J'accepte ta proposition");
-								//send(aclMessageAccept);
 								compteur = 0;
 								replies.clear();
 							}
@@ -200,11 +195,6 @@ public class AcheteurAgent extends GuiAgent {
 							aclMessage4.addReceiver(new AID("Consommateur", AID.ISLOCALNAME));
 							aclMessage4.setContent(retour);
 							send(aclMessage4);
-							
-							//ACLMessage aclMessageAccept = meilleureOffre.createReply();
-							//aclMessageAccept.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
-							//aclMessageAccept.setContent("J'accepte ta proposition");
-							//send(aclMessageAccept);
 							compteur = 0;
 							replies.clear();
 						}
